@@ -1,0 +1,46 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-success-subtle border-bottom">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-success-emphasis" href="/" data-link>
+      doTERRA Shop
+    </a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#main-navbar"
+      aria-controls="main-navbar"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="/" data-link>Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="/products" data-link>Products</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="/profile" data-link>Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="/admin" data-link>Admin</a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/cart" data-link class="btn btn-outline-success position-relative">
+          Cart
+          <span
+            id="cart-badge"
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          >
+            0
+          </span>
+        </a>
+        <button id="auth-button" class="btn btn-success">Login</button>
+      </div>
+    </div>
+  </div>
+</nav>

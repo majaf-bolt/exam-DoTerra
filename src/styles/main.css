@@ -1,0 +1,7 @@
+body {
+  min-height: 100vh;
+}
+
+#page-root {
+  min-height: calc(100vh - 180px);
+}
