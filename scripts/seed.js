@@ -1,11 +1,51 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = resolve(__dirname, "../.env");
+
+const { error: dotenvError } = dotenv.config({ path: envPath });
+
+if (dotenvError) {
+  console.error(`Failed to load .env from ${envPath}:`, dotenvError.message);
+  process.exit(1);
+}
+
+function readEnv(...names) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function resolveServiceKey(rawKey) {
+  const key = rawKey.trim();
+
+  // New Supabase secret keys use an sb_secret_ prefix; Auth Admin expects the JWT.
+  if (key.startsWith("sb_secret_")) {
+    const embeddedJwt = key.slice("sb_secret_".length).trim();
+    if (embeddedJwt.startsWith("eyJ")) {
+      return embeddedJwt;
+    }
+  }
+
+  return key;
+}
+
+const supabaseUrl = readEnv("VITE_SUPABASE_URL", "SUPABASE_URL");
+const serviceKey = resolveServiceKey(
+  readEnv("SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
 
 if (!supabaseUrl || !serviceKey) {
-  console.error("Missing VITE_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_KEY in .env");
+  console.error(`Missing env vars in ${envPath}`);
+  console.error("Required: VITE_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_KEY");
   process.exit(1);
 }
 
