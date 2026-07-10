@@ -1,4 +1,36 @@
 <section>
-  <h1 class="h2 mb-4">Products</h1>
+  <h1 class="h2 mb-4">Продукти</h1>
+
+  <div class="products-toolbar mb-4">
+    <div class="btn-group flex-wrap mb-3" role="group" aria-label="Филтър по категория" id="category-filters">
+      <a href="/products" data-link data-category="" class="btn btn-outline-success">Всички</a>
+      <a href="/products?category=oils" data-link data-category="oils" class="btn btn-outline-success">Масла</a>
+      <a href="/products?category=blends" data-link data-category="blends" class="btn btn-outline-success">Смеси</a>
+      <a href="/products?category=creams" data-link data-category="creams" class="btn btn-outline-success">Кремове</a>
+      <a href="/products?category=other" data-link data-category="other" class="btn btn-outline-success">Други</a>
+    </div>
+
+    <div class="row g-3 align-items-center">
+      <div class="col-md-8">
+        <label class="visually-hidden" for="product-search">Търсене</label>
+        <input
+          type="search"
+          id="product-search"
+          class="form-control"
+          placeholder="Търсене по име..."
+          autocomplete="off"
+        />
+      </div>
+      <div class="col-md-4">
+        <label class="visually-hidden" for="product-sort">Сортиране</label>
+        <select id="product-sort" class="form-select">
+          <option value="name-asc">А-Я</option>
+          <option value="price-asc">Цена ↑</option>
+          <option value="price-desc">Цена ↓</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <div id="products-grid" class="row g-3"></div>
 </section>

@@ -14,7 +14,7 @@ export async function getFeaturedProducts(limit = 4) {
   return data ?? [];
 }
 
-export async function getAllProducts(category = null) {
+export async function getProducts(category = null) {
   let query = supabase.from("products").select("*").order("name");
 
   if (category) {
@@ -30,7 +30,7 @@ export async function getAllProducts(category = null) {
   return data ?? [];
 }
 
-export async function getProductById(id) {
+export async function getProduct(id) {
   const { data, error } = await supabase
     .from("products")
     .select("*")
@@ -42,4 +42,41 @@ export async function getProductById(id) {
   }
 
   return data;
+}
+
+export async function createProduct(product) {
+  const { data, error } = await supabase
+    .from("products")
+    .insert(product)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function updateProduct(id, product) {
+  const { data, error } = await supabase
+    .from("products")
+    .update(product)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteProduct(id) {
+  const { error } = await supabase.from("products").delete().eq("id", id);
+
+  if (error) {
+    throw error;
+  }
 }

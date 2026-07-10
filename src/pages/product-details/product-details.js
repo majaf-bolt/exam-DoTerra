@@ -1,6 +1,6 @@
 import "./product-details.css";
 import template from "./product-details.html?raw";
-import { getProductById } from "../../services/products.js";
+import { getProduct } from "../../services/products.js";
 import { formatPrice } from "../../utils/helpers.js";
 
 export async function renderProductDetailsPage(rootElement, context) {
@@ -14,7 +14,7 @@ export async function renderProductDetailsPage(rootElement, context) {
   `;
 
   try {
-    const product = await getProductById(context.params.id);
+    const product = await getProduct(context.params.id);
 
     if (!product) {
       section.innerHTML = `<div class="alert alert-warning">Продуктът не е намерен.</div>`;
