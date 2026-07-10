@@ -1,13 +1,45 @@
-const demoProducts = [
-  { id: "lavender", name: "Lavender", price: 29.99, description: "Calming floral aroma." },
-  { id: "peppermint", name: "Peppermint", price: 24.99, description: "Fresh and energizing scent." },
-  { id: "lemon", name: "Lemon", price: 19.99, description: "Bright citrus oil." }
-];
+import { supabase } from "./supabase.js";
 
-export function getAllProducts() {
-  return demoProducts;
+export async function getFeaturedProducts(limit = 4) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, price, image_url, category")
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
 }
 
-export function getProductById(id) {
-  return demoProducts.find((product) => product.id === id) ?? null;
+export async function getAllProducts(category = null) {
+  let query = supabase.from("products").select("*").order("name");
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function getProductById(id) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }

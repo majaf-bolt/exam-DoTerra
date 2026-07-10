@@ -2,6 +2,10 @@ export function parseQueryParams(search) {
   return Object.fromEntries(new URLSearchParams(search));
 }
 
+export function formatPrice(price) {
+  return `${Number(price).toFixed(2)} лв`;
+}
+
 export function matchRoute(path, routes) {
   const routeSegmentsFromPath = path.split("/").filter(Boolean);
 

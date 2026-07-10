@@ -1,7 +1,60 @@
-<section class="text-center py-5">
-  <h1 class="display-5 fw-bold text-success">Welcome to doTERRA Essential Oils</h1>
-  <p class="lead text-muted mt-3">
-    Discover pure essential oils and wellness products for your daily routine.
-  </p>
-  <a href="/products" data-link class="btn btn-success btn-lg mt-3">Browse Products</a>
+<section class="home-hero text-center text-white mb-5">
+  <div class="home-hero-content">
+    <h1 class="display-5 fw-bold mb-3">Открий силата на природата 🌿</h1>
+    <p class="lead mb-4 opacity-75">
+      Чисти етерични масла и продукти за ежедневно благополучие от doTERRA.
+    </p>
+    <a href="/products" data-link class="btn btn-light btn-lg px-4">Разгледай продуктите</a>
+  </div>
+</section>
+
+<section class="mb-5">
+  <h2 class="h3 mb-4 text-success">Категории</h2>
+  <div class="row g-3">
+    <div class="col-sm-6 col-lg-3">
+      <a href="/products?category=oils" data-link class="text-decoration-none">
+        <div class="card category-card h-100 border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <div class="category-icon mb-2">🌿</div>
+            <h3 class="h5 card-title text-success mb-0">Масла</h3>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="/products?category=blends" data-link class="text-decoration-none">
+        <div class="card category-card h-100 border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <div class="category-icon mb-2">✨</div>
+            <h3 class="h5 card-title text-success mb-0">Смеси</h3>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="/products?category=creams" data-link class="text-decoration-none">
+        <div class="card category-card h-100 border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <div class="category-icon mb-2">🧴</div>
+            <h3 class="h5 card-title text-success mb-0">Кремове</h3>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="/products?category=other" data-link class="text-decoration-none">
+        <div class="card category-card h-100 border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <div class="category-icon mb-2">🎁</div>
+            <h3 class="h5 card-title text-success mb-0">Други</h3>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="h3 mb-4 text-success">Препоръчани продукти</h2>
+  <div id="featured-products-grid" class="row g-4"></div>
 </section>

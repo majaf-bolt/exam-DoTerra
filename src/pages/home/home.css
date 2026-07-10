@@ -1,4 +1,32 @@
-.display-5 {
-  max-width: 720px;
+.home-hero {
+  background: linear-gradient(135deg, #198754 0%, #146c43 50%, #0f5132 100%);
+  border-radius: 1rem;
+  padding: 4rem 2rem;
+}
+
+.home-hero-content {
+  max-width: 640px;
   margin: 0 auto;
+}
+
+.category-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(25, 135, 84, 0.15) !important;
+}
+
+.category-icon {
+  font-size: 2rem;
+}
+
+.featured-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.featured-card .placeholder-img {
+  height: 200px;
 }
