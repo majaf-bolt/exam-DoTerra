@@ -1,11 +1,9 @@
 import "./home.css";
 import template from "./home.html?raw";
 import { getFeaturedProducts } from "../../services/products.js";
-import { formatPrice } from "../../utils/helpers.js";
+import { formatPrice, getProductImageUrl } from "../../utils/helpers.js";
 
 const FEATURED_COUNT = 4;
-const PLACEHOLDER_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240' viewBox='0 0 400 240'%3E%3Crect fill='%23198754' width='400' height='240'/%3E%3Ctext fill='%23ffffff' font-family='sans-serif' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3EdoTERRA%3C/text%3E%3C/svg%3E";
 
 function renderFeaturedSkeleton() {
   return `
@@ -27,7 +25,7 @@ function renderFeaturedSkeleton() {
 }
 
 function renderFeaturedProduct(product) {
-  const imageUrl = product.image_url || PLACEHOLDER_IMAGE;
+  const imageUrl = getProductImageUrl(product.image_url);
 
   return `
     <div class="col-sm-6 col-lg-3">
