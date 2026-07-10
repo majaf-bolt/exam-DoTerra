@@ -31,7 +31,8 @@ export function createRouter({
 
     route.render(rootElement, {
       params,
-      query: parseQueryParams(window.location.search)
+      query: parseQueryParams(window.location.search),
+      navigate
     });
   };
 

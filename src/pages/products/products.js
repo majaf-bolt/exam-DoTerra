@@ -1,20 +1,9 @@
 import "./products.css";
 import template from "./products.html?raw";
 import { getProducts } from "../../services/products.js";
-import { formatPrice, getProductImageUrl } from "../../utils/helpers.js";
+import { formatPrice, getCategoryLabel, getProductImageUrl } from "../../utils/helpers.js";
 
 const SKELETON_COUNT = 6;
-
-const CATEGORY_LABELS = {
-  oils: "Масла",
-  blends: "Смеси",
-  creams: "Кремове",
-  other: "Други"
-};
-
-function getCategoryLabel(category) {
-  return CATEGORY_LABELS[category] ?? "Други";
-}
 
 function renderProductSkeleton() {
   return `

@@ -44,6 +44,21 @@ export async function getProduct(id) {
   return data;
 }
 
+export async function getRelatedProducts(category, excludeId, limit = 3) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, price, image_url, category")
+    .eq("category", category)
+    .neq("id", excludeId)
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
 export async function createProduct(product) {
   const { data, error } = await supabase
     .from("products")

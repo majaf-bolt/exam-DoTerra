@@ -4,6 +4,7 @@ import "./styles/main.css";
 
 import { createRouter } from "./utils/router.js";
 import { isAdmin, isAuthenticated, logout } from "./services/auth.js";
+import { getCartCount } from "./services/cart.js";
 
 import { renderHeader, bindHeaderEvents, updateHeaderState } from "./components/header/header.js";
 import { renderFooter } from "./components/footer/footer.js";
@@ -72,7 +73,7 @@ bindHeaderEvents({
 
 updateHeaderState({
   isAuthenticated: isAuthenticated(),
-  cartCount: 0
+  cartCount: getCartCount()
 });
 
 router.start();
