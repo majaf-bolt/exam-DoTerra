@@ -1,3 +1,23 @@
-.alert {
-  max-width: 640px;
+.cart-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  color: #198754;
+}
+
+.cart-table img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+.cart-remove-btn {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.cart-quantity-input {
+  width: 4.5rem;
 }

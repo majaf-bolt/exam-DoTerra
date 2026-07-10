@@ -1,4 +1,52 @@
 <section>
-  <h1 class="h2 mb-4">My Cart</h1>
-  <div class="alert alert-info">Your cart is empty. Add some oils to continue.</div>
+  <h1 class="h2 mb-4">Количка</h1>
+  <div id="cart-empty" class="d-none"></div>
+  <div id="cart-content" class="d-none row g-4">
+    <div class="col-lg-8">
+      <div class="table-responsive">
+        <table class="table align-middle cart-table">
+          <thead>
+            <tr>
+              <th scope="col">Продукт</th>
+              <th scope="col">Име</th>
+              <th scope="col">Цена</th>
+              <th scope="col">Кол.</th>
+              <th scope="col">Общо</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody id="cart-items-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h5 card-title mb-3">Обобщение</h2>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Междинна сума</span>
+            <span id="cart-subtotal">0.00 лв</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Доставка</span>
+            <span id="cart-shipping">0.00 лв</span>
+          </div>
+          <hr />
+          <div class="d-flex justify-content-between fw-bold mb-4">
+            <span>Общо</span>
+            <span id="cart-total" class="text-success">0.00 лв</span>
+          </div>
+          <div class="mb-3">
+            <label for="cart-phone" class="form-label">Телефон</label>
+            <input type="tel" class="form-control" id="cart-phone" required />
+          </div>
+          <div class="mb-4">
+            <label for="cart-address" class="form-label">Адрес</label>
+            <textarea class="form-control" id="cart-address" rows="3" required></textarea>
+          </div>
+          <button id="checkout-btn" class="btn btn-success w-100" type="button">Поръчай</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>

@@ -10,6 +10,44 @@ export function getCartCount() {
   return getCart().reduce((total, item) => total + item.quantity, 0);
 }
 
+export function saveCart(cart) {
+  storage.set(CART_KEY, cart);
+}
+
+export function clearCart() {
+  storage.remove(CART_KEY);
+}
+
+export function updateCartItemQuantity(productId, quantity) {
+  const cart = getCart();
+  const item = cart.find((entry) => entry.productId === productId);
+
+  if (!item) {
+    return cart;
+  }
+
+  if (quantity <= 0) {
+    return removeFromCart(productId);
+  }
+
+  item.quantity = quantity;
+  saveCart(cart);
+  return cart;
+}
+
+export function removeFromCart(productId) {
+  const cart = getCart().filter((entry) => entry.productId !== productId);
+  saveCart(cart);
+  return cart;
+}
+
+export function getCartSubtotal(cart = getCart()) {
+  return cart.reduce(
+    (total, item) => total + Number(item.price) * Number(item.quantity),
+    0
+  );
+}
+
 export function addToCart(product, quantity) {
   const cart = getCart();
   const existingItem = cart.find((item) => item.productId === product.id);
