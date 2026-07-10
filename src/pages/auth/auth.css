@@ -1,3 +1,21 @@
-.card {
+.auth-page {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
   border-radius: 1rem;
+}
+
+.auth-card .nav-link {
+  color: #198754;
+}
+
+.auth-card .nav-link.active {
+  color: #fff;
+  background-color: #198754;
+  border-color: #198754 #198754 #fff;
 }

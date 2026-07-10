@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./styles/main.css";
 
 import { createRouter } from "./utils/router.js";
-import { isAdmin, isAuthenticated, logout } from "./services/auth.js";
+import { initAuth, isAdmin, isAuthenticated, logout } from "./services/auth.js";
 import { getCartCount } from "./services/cart.js";
 
 import { renderHeader, bindHeaderEvents, updateHeaderState } from "./components/header/header.js";
@@ -63,17 +63,19 @@ const router = createRouter({
 
 bindHeaderEvents({
   navigate: router.navigate,
-  logout: () => {
-    logout();
-    updateHeaderState({ isAuthenticated: false, cartCount: 0 });
+  logout: async () => {
+    await logout();
+    updateHeaderState({ isAuthenticated: false, cartCount: getCartCount() });
     showToast("You were logged out successfully.", "info");
     router.navigate("/");
   }
 });
 
-updateHeaderState({
-  isAuthenticated: isAuthenticated(),
-  cartCount: getCartCount()
-});
+initAuth().then(() => {
+  updateHeaderState({
+    isAuthenticated: isAuthenticated(),
+    cartCount: getCartCount()
+  });
 
-router.start();
+  router.start();
+});
