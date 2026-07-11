@@ -242,7 +242,7 @@ function renderCustomersTable(customers) {
               ${CUSTOMER_TAG_LABELS[customer.customer_tag] ?? customer.customer_tag}
             </span>
           </td>
-          <td>${customer.orders?.[0]?.count ?? 0}</td>
+          <td>${customer.orders_count ?? 0}</td>
           <td>
             <button type="button" class="btn btn-sm btn-outline-success customer-profile-btn">Профил</button>
           </td>

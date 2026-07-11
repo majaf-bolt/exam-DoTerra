@@ -1,4 +1,5 @@
 import { supabase } from "./supabase.js";
+import { isAdmin } from "./auth.js";
 
 const FREE_SHIPPING_THRESHOLD = 100;
 const SHIPPING_COST = 8;
@@ -72,8 +73,36 @@ export async function getMyOrders(userId) {
   return data ?? [];
 }
 
+async function attachProfilesToOrders(orders) {
+  const userIds = [...new Set((orders ?? []).map((order) => order.user_id).filter(Boolean))];
+
+  if (!userIds.length) {
+    return (orders ?? []).map((order) => ({ ...order, profiles: null }));
+  }
+
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, phone, email")
+    .in("id", userIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((profile) => [profile.id, profile]));
+
+  return (orders ?? []).map((order) => ({
+    ...order,
+    profiles: profileMap[order.user_id] ?? null
+  }));
+}
+
 export async function getAllOrders() {
-  const { data, error } = await supabase
+  if (!isAdmin()) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: orders, error: ordersError } = await supabase
     .from("orders")
     .select(`
       id,
@@ -84,19 +113,22 @@ export async function getAllOrders() {
       shipping_phone,
       shipping_address,
       created_at,
-      profiles(full_name, phone, email),
       order_items(id, quantity, price, products(name))
     `)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    throw error;
+  if (ordersError) {
+    throw ordersError;
   }
 
-  return data ?? [];
+  return attachProfilesToOrders(orders);
 }
 
 export async function updateOrderStatus(orderId, { oldStatus, newStatus, changedBy, note = null }) {
+  if (!isAdmin()) {
+    throw new Error("Unauthorized");
+  }
+
   const { data: order, error: updateError } = await supabase
     .from("orders")
     .update({
@@ -127,6 +159,10 @@ export async function updateOrderStatus(orderId, { oldStatus, newStatus, changed
 }
 
 export async function updateOrderSellerNote(orderId, sellerNote) {
+  if (!isAdmin()) {
+    throw new Error("Unauthorized");
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update({
