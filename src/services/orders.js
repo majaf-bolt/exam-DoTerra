@@ -71,3 +71,75 @@ export async function getMyOrders(userId) {
 
   return data ?? [];
 }
+
+export async function getAllOrders() {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      user_id,
+      total_price,
+      status,
+      seller_note,
+      shipping_phone,
+      shipping_address,
+      created_at,
+      profiles(full_name, phone),
+      order_items(id, quantity, price, products(name))
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function updateOrderStatus(orderId, { oldStatus, newStatus, changedBy, note = null }) {
+  const { data: order, error: updateError } = await supabase
+    .from("orders")
+    .update({
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+    .select("id, status")
+    .single();
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  const { error: logError } = await supabase.from("order_status_log").insert({
+    order_id: orderId,
+    old_status: oldStatus,
+    new_status: newStatus,
+    changed_by: changedBy,
+    note
+  });
+
+  if (logError) {
+    throw logError;
+  }
+
+  return order;
+}
+
+export async function updateOrderSellerNote(orderId, sellerNote) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({
+      seller_note: sellerNote,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+    .select("id, seller_note")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
