@@ -9,15 +9,18 @@ import {
   deleteProduct
 } from "../../services/products.js";
 import {
-  getAllOrders,
-  updateOrderStatus,
-  updateOrderSellerNote
+  getAllOrders
 } from "../../services/orders.js";
 import {
-  getAllCustomers,
+  getCustomers,
   getCustomerById,
+  getCustomerOrders,
   getCustomerNotes,
-  createCustomerNote
+  addCustomerNote,
+  deleteCustomerNote,
+  updateCustomerTag,
+  updateOrderStatus,
+  updateOrderSellerNote
 } from "../../services/customers.js";
 import { showToast } from "../../components/toast/toast.js";
 import { formatPrice, getCategoryLabel, getProductImageUrl } from "../../utils/helpers.js";
@@ -225,15 +228,54 @@ function renderOrdersTable(orders) {
   `;
 }
 
+let activeCustomerId = null;
+
+function getInitials(name) {
+  return (name ?? "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function renderCustomerAvatar(customer) {
+  if (customer.avatar_url) {
+    return `<img src="${customer.avatar_url}" alt="${customer.full_name}" class="customer-avatar" />`;
+  }
+
+  return `
+    <div class="customer-avatar-placeholder d-inline-flex align-items-center justify-content-center">
+      ${getInitials(customer.full_name)}
+    </div>
+  `;
+}
+
+function filterCustomers(customers, tagFilter, searchTerm) {
+  const query = searchTerm.trim().toLowerCase();
+
+  return customers.filter((customer) => {
+    const matchesTag = !tagFilter || customer.customer_tag === tagFilter;
+    const matchesSearch =
+      !query ||
+      (customer.full_name ?? "").toLowerCase().includes(query) ||
+      (customer.email ?? "").toLowerCase().includes(query) ||
+      (customer.phone ?? "").toLowerCase().includes(query);
+
+    return matchesTag && matchesSearch;
+  });
+}
+
 function renderCustomersTable(customers) {
   if (!customers.length) {
-    return `<div class="alert alert-info">Няма клиенти.</div>`;
+    return `<div class="alert alert-info">Няма намерени клиенти.</div>`;
   }
 
   const rows = customers
     .map(
       (customer) => `
         <tr data-customer-id="${customer.id}">
+          <td>${renderCustomerAvatar(customer)}</td>
           <td>${customer.full_name ?? "—"}</td>
           <td>${customer.email ?? "—"}</td>
           <td>${customer.phone ?? "—"}</td>
@@ -256,6 +298,7 @@ function renderCustomersTable(customers) {
       <table class="table table-hover align-middle admin-table">
         <thead>
           <tr>
+            <th>Аватар</th>
             <th>Име</th>
             <th>Имейл</th>
             <th>Телефон</th>
@@ -270,43 +313,53 @@ function renderCustomersTable(customers) {
   `;
 }
 
-function renderCustomerOrders(orders) {
+function renderCustomerModalOrders(orders) {
   if (!orders?.length) {
     return `<p class="text-muted mb-0">Няма поръчки.</p>`;
   }
 
-  const sorted = [...orders].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-  return `
-    <div class="list-group list-group-flush">
-      ${sorted
-        .map((order) => {
-          const itemsCount = order.order_items?.length ?? 0;
-          return `
-            <div class="list-group-item">
-              <div class="d-flex justify-content-between align-items-start gap-3">
-                <div>
-                  <div class="fw-semibold">${shortId(order.id)} · ${formatDate(order.created_at)}</div>
-                  <div class="text-muted small">${itemsCount} артикула</div>
-                </div>
-                <div class="text-end">
-                  <span class="badge text-bg-secondary">${ORDER_STATUS_LABELS[order.status] ?? order.status}</span>
-                  <div class="fw-semibold text-success mt-1">${formatPrice(order.total_price)}</div>
-                </div>
+  return orders
+    .map(
+      (order) => `
+        <div class="card mb-3" data-customer-order-id="${order.id}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <div class="fw-semibold">${shortId(order.id)}</div>
+                <div class="text-muted small">${formatDate(order.created_at)}</div>
               </div>
+              <div class="fw-semibold text-success">${formatPrice(order.total_price)}</div>
             </div>
-          `;
-        })
-        .join("")}
-    </div>
-  `;
+            <label class="form-label">Статус</label>
+            <select
+              class="form-select form-select-sm mb-3 customer-order-status-select"
+              data-order-id="${order.id}"
+              data-old-status="${order.status}"
+            >
+              ${ORDER_STATUSES.map(
+                (status) =>
+                  `<option value="${status.value}" ${order.status === status.value ? "selected" : ""}>${status.label}</option>`
+              ).join("")}
+            </select>
+            <label class="form-label">Бележка на продавача</label>
+            <textarea
+              class="form-control form-control-sm mb-2 customer-order-seller-note"
+              rows="2"
+              data-order-id="${order.id}"
+            >${order.seller_note ?? ""}</textarea>
+            <button type="button" class="btn btn-sm btn-outline-success save-customer-order-note-btn" data-order-id="${order.id}">
+              Запази бележка
+            </button>
+          </div>
+        </div>
+      `
+    )
+    .join("");
 }
 
-function renderCustomerNotes(notes) {
+function renderCustomerModalNotes(notes) {
   if (!notes.length) {
-    return `<p class="text-muted mb-3">Няма частни бележки.</p>`;
+    return `<p class="text-muted mb-3">🔒 Няма частни бележки.</p>`;
   }
 
   return `
@@ -314,9 +367,14 @@ function renderCustomerNotes(notes) {
       ${notes
         .map(
           (note) => `
-            <li class="list-group-item">
-              <p class="mb-1">${note.note}</p>
-              <small class="text-muted">${formatDate(note.created_at)}</small>
+            <li class="list-group-item private-note-item d-flex justify-content-between align-items-start gap-3" data-note-id="${note.id}">
+              <div>
+                <div class="mb-1">🔒 ${note.note}</div>
+                <small class="text-muted">${formatDate(note.created_at)}</small>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-danger delete-customer-note-btn" data-note-id="${note.id}">
+                ×
+              </button>
             </li>
           `
         )
@@ -325,40 +383,58 @@ function renderCustomerNotes(notes) {
   `;
 }
 
-function renderCustomerModalContent(customer, notes) {
+function renderCustomerModalContent(customer, orders, notes) {
   return `
-    <div class="mb-4">
-      <h2 class="h6 text-success">Информация</h2>
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item"><strong>Име:</strong> ${customer.full_name ?? "—"}</li>
-        <li class="list-group-item"><strong>Имейл:</strong> ${customer.email ?? "—"}</li>
-        <li class="list-group-item"><strong>Телефон:</strong> ${customer.phone ?? "—"}</li>
-        <li class="list-group-item"><strong>Адрес:</strong> ${customer.address ?? "—"}</li>
-        <li class="list-group-item"><strong>Град:</strong> ${customer.city ?? "—"}</li>
-        <li class="list-group-item">
-          <strong>Етикет:</strong>
-          <span class="badge text-bg-success ms-2">
-            ${CUSTOMER_TAG_LABELS[customer.customer_tag] ?? customer.customer_tag}
-          </span>
-        </li>
-      </ul>
-    </div>
+    <ul class="nav nav-tabs customer-modal-tabs mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#customer-info-tab" type="button" role="tab">
+          Информация
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#customer-orders-tab" type="button" role="tab">
+          Поръчки
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#customer-notes-tab" type="button" role="tab">
+          Бележки
+        </button>
+      </li>
+    </ul>
 
-    <div class="mb-4">
-      <h2 class="h6 text-success">История на поръчките</h2>
-      ${renderCustomerOrders(customer.orders)}
-    </div>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="customer-info-tab" role="tabpanel">
+        <div class="text-center mb-4">${renderCustomerAvatar(customer)}</div>
+        <ul class="list-group list-group-flush mb-4">
+          <li class="list-group-item"><strong>Име:</strong> ${customer.full_name ?? "—"}</li>
+          <li class="list-group-item"><strong>Имейл:</strong> ${customer.email ?? "—"}</li>
+          <li class="list-group-item"><strong>Телефон:</strong> ${customer.phone ?? "—"}</li>
+          <li class="list-group-item"><strong>Адрес:</strong> ${customer.address ?? "—"}</li>
+          <li class="list-group-item"><strong>Град:</strong> ${customer.city ?? "—"}</li>
+        </ul>
+        <label for="customer-tag-select" class="form-label">Етикет на клиент</label>
+        <select id="customer-tag-select" class="form-select" data-customer-id="${customer.id}">
+          <option value="new" ${customer.customer_tag === "new" ? "selected" : ""}>Нов</option>
+          <option value="vip" ${customer.customer_tag === "vip" ? "selected" : ""}>VIP</option>
+          <option value="returning" ${customer.customer_tag === "returning" ? "selected" : ""}>Върнал се</option>
+        </select>
+      </div>
 
-    <div>
-      <h2 class="h6 text-success">Частни бележки</h2>
-      <div id="customer-notes-list">${renderCustomerNotes(notes)}</div>
-      <form id="customer-note-form">
-        <input type="hidden" id="customer-note-id" value="${customer.id}" />
-        <div class="mb-2">
-          <textarea class="form-control" id="customer-note-text" rows="2" placeholder="Добави бележка..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-sm btn-success">Добави бележка</button>
-      </form>
+      <div class="tab-pane fade" id="customer-orders-tab" role="tabpanel">
+        <div id="customer-orders-list">${renderCustomerModalOrders(orders)}</div>
+      </div>
+
+      <div class="tab-pane fade" id="customer-notes-tab" role="tabpanel">
+        <div id="customer-notes-list">${renderCustomerModalNotes(notes)}</div>
+        <form id="customer-note-form">
+          <input type="hidden" id="customer-note-id" value="${customer.id}" />
+          <div class="mb-2">
+            <textarea class="form-control" id="customer-note-text" rows="2" placeholder="Добави частна бележка..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-sm btn-success">Добави бележка</button>
+        </form>
+      </div>
     </div>
   `;
 }
@@ -412,6 +488,7 @@ function openDeleteProductModal(rootElement, product) {
 async function openCustomerModal(rootElement, customerId) {
   const modalBody = rootElement.querySelector("#customer-modal-body");
   const modalTitle = rootElement.querySelector("#customer-modal-title");
+  activeCustomerId = customerId;
 
   modalBody.innerHTML = `
     <div class="placeholder-glow" aria-hidden="true">
@@ -426,8 +503,9 @@ async function openCustomerModal(rootElement, customerId) {
   customerModal.show();
 
   try {
-    const [customer, notes] = await Promise.all([
+    const [customer, orders, notes] = await Promise.all([
       getCustomerById(customerId),
+      getCustomerOrders(customerId),
       getCustomerNotes(customerId)
     ]);
 
@@ -437,45 +515,138 @@ async function openCustomerModal(rootElement, customerId) {
     }
 
     modalTitle.textContent = customer.full_name ?? "Профил на клиент";
-    modalBody.innerHTML = renderCustomerModalContent(customer, notes);
-    bindCustomerNoteForm(rootElement);
+    modalBody.innerHTML = renderCustomerModalContent(customer, orders, notes);
+    bindCustomerModalEvents(rootElement);
   } catch {
     modalBody.innerHTML = `<div class="alert alert-warning">Неуспешно зареждане на клиента.</div>`;
   }
 }
 
-function bindCustomerNoteForm(rootElement) {
-  const form = rootElement.querySelector("#customer-note-form");
-  if (!form) {
-    return;
+function bindCustomerModalEvents(rootElement) {
+  const modalBody = rootElement.querySelector("#customer-modal-body");
+  const admin = getCurrentUser();
+
+  const tagSelect = modalBody.querySelector("#customer-tag-select");
+  if (tagSelect) {
+    tagSelect.addEventListener("change", async () => {
+      try {
+        await updateCustomerTag(tagSelect.dataset.customerId, tagSelect.value);
+        const customer = customersCache.find((entry) => entry.id === tagSelect.dataset.customerId);
+        if (customer) {
+          customer.customer_tag = tagSelect.value;
+        }
+        renderFilteredCustomersTable(rootElement);
+        showToast("Етикетът е обновен.", "success");
+      } catch (error) {
+        showToast(error.message ?? "Неуспешно обновяване на етикета.", "danger");
+      }
+    });
   }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const customerId = rootElement.querySelector("#customer-note-id").value;
-    const noteText = rootElement.querySelector("#customer-note-text").value.trim();
-    const admin = getCurrentUser();
-    const submitButton = form.querySelector('[type="submit"]');
-
-    if (!noteText) {
+  modalBody.addEventListener("change", async (event) => {
+    const select = event.target.closest(".customer-order-status-select");
+    if (!select) {
       return;
     }
 
-    submitButton.disabled = true;
+    const orderId = select.dataset.orderId;
+    const oldStatus = select.dataset.oldStatus;
+    const newStatus = select.value;
+
+    if (oldStatus === newStatus) {
+      return;
+    }
+
+    select.disabled = true;
 
     try {
-      await createCustomerNote(customerId, noteText, admin.id);
-      const notes = await getCustomerNotes(customerId);
-      rootElement.querySelector("#customer-notes-list").innerHTML = renderCustomerNotes(notes);
-      rootElement.querySelector("#customer-note-text").value = "";
-      showToast("Бележката е добавена.", "success");
+      await updateOrderStatus(orderId, {
+        oldStatus,
+        newStatus,
+        changedBy: admin.id
+      });
+      select.dataset.oldStatus = newStatus;
+      showToast("Статусът на поръчката е обновен.", "success");
     } catch (error) {
-      showToast(error.message ?? "Неуспешно добавяне на бележка.", "danger");
+      select.value = oldStatus;
+      showToast(error.message ?? "Неуспешно обновяване на статуса.", "danger");
     } finally {
-      submitButton.disabled = false;
+      select.disabled = false;
     }
   });
+
+  modalBody.addEventListener("click", async (event) => {
+    const saveNoteButton = event.target.closest(".save-customer-order-note-btn");
+    const deleteNoteButton = event.target.closest(".delete-customer-note-btn");
+
+    if (saveNoteButton) {
+      const orderId = saveNoteButton.dataset.orderId;
+      const textarea = modalBody.querySelector(`.customer-order-seller-note[data-order-id="${orderId}"]`);
+      saveNoteButton.disabled = true;
+
+      try {
+        await updateOrderSellerNote(orderId, textarea.value.trim());
+        showToast("Бележката към поръчката е запазена.", "success");
+      } catch (error) {
+        showToast(error.message ?? "Неуспешно запазване на бележката.", "danger");
+      } finally {
+        saveNoteButton.disabled = false;
+      }
+      return;
+    }
+
+    if (deleteNoteButton) {
+      const noteId = deleteNoteButton.dataset.noteId;
+      deleteNoteButton.disabled = true;
+
+      try {
+        await deleteCustomerNote(noteId);
+        const notes = await getCustomerNotes(activeCustomerId);
+        modalBody.querySelector("#customer-notes-list").innerHTML = renderCustomerModalNotes(notes);
+        showToast("Бележката е изтрита.", "success");
+      } catch (error) {
+        showToast(error.message ?? "Неуспешно изтриване на бележката.", "danger");
+      } finally {
+        deleteNoteButton.disabled = false;
+      }
+    }
+  });
+
+  const noteForm = modalBody.querySelector("#customer-note-form");
+  if (noteForm) {
+    noteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const customerId = modalBody.querySelector("#customer-note-id").value;
+      const noteText = modalBody.querySelector("#customer-note-text").value.trim();
+      const submitButton = noteForm.querySelector('[type="submit"]');
+
+      if (!noteText) {
+        return;
+      }
+
+      submitButton.disabled = true;
+
+      try {
+        await addCustomerNote(customerId, noteText, admin.id);
+        const notes = await getCustomerNotes(customerId);
+        modalBody.querySelector("#customer-notes-list").innerHTML = renderCustomerModalNotes(notes);
+        modalBody.querySelector("#customer-note-text").value = "";
+        showToast("Бележката е добавена.", "success");
+      } catch (error) {
+        showToast(error.message ?? "Неуспешно добавяне на бележка.", "danger");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  }
+}
+
+function renderFilteredCustomersTable(rootElement) {
+  const tagFilter = rootElement.querySelector("#customer-tag-filter")?.value ?? "";
+  const searchTerm = rootElement.querySelector("#customer-search")?.value ?? "";
+  const filtered = filterCustomers(customersCache, tagFilter, searchTerm);
+  rootElement.querySelector("#customers-table-wrap").innerHTML = renderCustomersTable(filtered);
 }
 
 async function loadProductsTab(rootElement) {
@@ -507,8 +678,8 @@ async function loadCustomersTab(rootElement) {
   renderLoading(container);
 
   try {
-    customersCache = await getAllCustomers();
-    container.innerHTML = renderCustomersTable(customersCache);
+    customersCache = await getCustomers();
+    renderFilteredCustomersTable(rootElement);
   } catch {
     container.innerHTML = `<div class="alert alert-warning">Неуспешно зареждане на клиентите.</div>`;
   }
@@ -662,6 +833,11 @@ function bindOrdersTab(rootElement) {
 
 function bindCustomersTab(rootElement) {
   const wrap = rootElement.querySelector("#customers-table-wrap");
+  const tagFilter = rootElement.querySelector("#customer-tag-filter");
+  const searchInput = rootElement.querySelector("#customer-search");
+
+  tagFilter?.addEventListener("change", () => renderFilteredCustomersTable(rootElement));
+  searchInput?.addEventListener("input", () => renderFilteredCustomersTable(rootElement));
 
   wrap.addEventListener("click", (event) => {
     const profileButton = event.target.closest(".customer-profile-btn");

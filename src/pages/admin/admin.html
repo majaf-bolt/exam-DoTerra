@@ -35,6 +35,27 @@
 
     <div class="tab-pane fade" id="customers-tab" role="tabpanel">
       <h2 class="h5 mb-3">Клиенти</h2>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="visually-hidden" for="customer-tag-filter">Филтър по етикет</label>
+          <select id="customer-tag-filter" class="form-select">
+            <option value="">Всички етикети</option>
+            <option value="new">Нов</option>
+            <option value="vip">VIP</option>
+            <option value="returning">Върнал се</option>
+          </select>
+        </div>
+        <div class="col-md-8">
+          <label class="visually-hidden" for="customer-search">Търсене</label>
+          <input
+            type="search"
+            id="customer-search"
+            class="form-control"
+            placeholder="Търсене по име, имейл или телефон..."
+            autocomplete="off"
+          />
+        </div>
+      </div>
       <div id="customers-table-wrap"></div>
     </div>
   </div>
