@@ -23,3 +23,7 @@
 #admin-tabs .nav-link {
   color: #198754;
 }
+
+.admin-table .seller-note-input {
+  min-width: 180px;
+}

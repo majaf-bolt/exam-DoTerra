@@ -13,7 +13,12 @@ import {
   updateOrderStatus,
   updateOrderSellerNote
 } from "../../services/orders.js";
-import { getAllCustomers } from "../../services/customers.js";
+import {
+  getAllCustomers,
+  getCustomerById,
+  getCustomerNotes,
+  createCustomerNote
+} from "../../services/customers.js";
 import { showToast } from "../../components/toast/toast.js";
 import { formatPrice, getCategoryLabel, getProductImageUrl } from "../../utils/helpers.js";
 
@@ -25,6 +30,10 @@ const ORDER_STATUSES = [
   { value: "cancelled", label: "Отказана" }
 ];
 
+const ORDER_STATUS_LABELS = Object.fromEntries(
+  ORDER_STATUSES.map((status) => [status.value, status.label])
+);
+
 const CUSTOMER_TAG_LABELS = {
   new: "Нов",
   vip: "VIP",
@@ -32,8 +41,12 @@ const CUSTOMER_TAG_LABELS = {
 };
 
 let productModal = null;
+let deleteProductModal = null;
+let customerModal = null;
 let productsCache = [];
 let ordersCache = [];
+let customersCache = [];
+let pendingDeleteProductId = null;
 
 function formatDate(value) {
   return new Date(value).toLocaleDateString("bg-BG", {
@@ -144,18 +157,29 @@ function renderOrdersTable(orders) {
 
   const rows = orders
     .map((order, index) => {
-      const clientName = order.profiles?.full_name ?? "—";
+      const clientEmail = order.profiles?.email ?? "—";
       const phone = order.shipping_phone ?? order.profiles?.phone ?? "—";
       const collapseId = `order-details-${index}`;
 
       return `
         <tr>
           <td><span class="admin-short-id">${shortId(order.id)}</span></td>
-          <td>${clientName}</td>
+          <td>${clientEmail}</td>
           <td>${phone}</td>
           <td>${formatDate(order.created_at)}</td>
           <td>${renderStatusSelect(order)}</td>
           <td class="fw-semibold text-success">${formatPrice(order.total_price)}</td>
+          <td>
+            <textarea
+              class="form-control form-control-sm seller-note-input mb-2"
+              rows="2"
+              data-order-id="${order.id}"
+              placeholder="Бележка на продавача"
+            >${order.seller_note ?? ""}</textarea>
+            <button type="button" class="btn btn-sm btn-outline-success save-seller-note-btn" data-order-id="${order.id}">
+              Запази
+            </button>
+          </td>
           <td>
             <button
               type="button"
@@ -169,17 +193,10 @@ function renderOrdersTable(orders) {
           </td>
         </tr>
         <tr class="collapse admin-order-details" id="${collapseId}">
-          <td colspan="7">
+          <td colspan="8">
             <div class="p-3">
               <h3 class="h6 mb-2">Артикули</h3>
               ${renderOrderItems(order.order_items)}
-              <div class="mt-3">
-                <label class="form-label" for="seller-note-${index}">Бележка на продавача</label>
-                <textarea class="form-control seller-note-input mb-2" id="seller-note-${index}" rows="2" data-order-id="${order.id}">${order.seller_note ?? ""}</textarea>
-                <button type="button" class="btn btn-sm btn-success save-seller-note-btn" data-order-id="${order.id}">
-                  Запази бележка
-                </button>
-              </div>
             </div>
           </td>
         </tr>
@@ -193,11 +210,12 @@ function renderOrdersTable(orders) {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Клиент</th>
+            <th>Имейл</th>
             <th>Телефон</th>
             <th>Дата</th>
             <th>Статус</th>
             <th>Сума</th>
+            <th>Бележка</th>
             <th></th>
           </tr>
         </thead>
@@ -215,16 +233,19 @@ function renderCustomersTable(customers) {
   const rows = customers
     .map(
       (customer) => `
-        <tr>
+        <tr data-customer-id="${customer.id}">
           <td>${customer.full_name ?? "—"}</td>
+          <td>${customer.email ?? "—"}</td>
           <td>${customer.phone ?? "—"}</td>
-          <td>${customer.city ?? "—"}</td>
           <td>
             <span class="badge text-bg-success">
               ${CUSTOMER_TAG_LABELS[customer.customer_tag] ?? customer.customer_tag}
             </span>
           </td>
-          <td>${formatDate(customer.created_at)}</td>
+          <td>${customer.orders?.[0]?.count ?? 0}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-outline-success customer-profile-btn">Профил</button>
+          </td>
         </tr>
       `
     )
@@ -236,14 +257,108 @@ function renderCustomersTable(customers) {
         <thead>
           <tr>
             <th>Име</th>
+            <th>Имейл</th>
             <th>Телефон</th>
-            <th>Град</th>
             <th>Етикет</th>
-            <th>Регистрация</th>
+            <th>Поръчки</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
+    </div>
+  `;
+}
+
+function renderCustomerOrders(orders) {
+  if (!orders?.length) {
+    return `<p class="text-muted mb-0">Няма поръчки.</p>`;
+  }
+
+  const sorted = [...orders].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  return `
+    <div class="list-group list-group-flush">
+      ${sorted
+        .map((order) => {
+          const itemsCount = order.order_items?.length ?? 0;
+          return `
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                  <div class="fw-semibold">${shortId(order.id)} · ${formatDate(order.created_at)}</div>
+                  <div class="text-muted small">${itemsCount} артикула</div>
+                </div>
+                <div class="text-end">
+                  <span class="badge text-bg-secondary">${ORDER_STATUS_LABELS[order.status] ?? order.status}</span>
+                  <div class="fw-semibold text-success mt-1">${formatPrice(order.total_price)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderCustomerNotes(notes) {
+  if (!notes.length) {
+    return `<p class="text-muted mb-3">Няма частни бележки.</p>`;
+  }
+
+  return `
+    <ul class="list-group list-group-flush mb-3">
+      ${notes
+        .map(
+          (note) => `
+            <li class="list-group-item">
+              <p class="mb-1">${note.note}</p>
+              <small class="text-muted">${formatDate(note.created_at)}</small>
+            </li>
+          `
+        )
+        .join("")}
+    </ul>
+  `;
+}
+
+function renderCustomerModalContent(customer, notes) {
+  return `
+    <div class="mb-4">
+      <h2 class="h6 text-success">Информация</h2>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><strong>Име:</strong> ${customer.full_name ?? "—"}</li>
+        <li class="list-group-item"><strong>Имейл:</strong> ${customer.email ?? "—"}</li>
+        <li class="list-group-item"><strong>Телефон:</strong> ${customer.phone ?? "—"}</li>
+        <li class="list-group-item"><strong>Адрес:</strong> ${customer.address ?? "—"}</li>
+        <li class="list-group-item"><strong>Град:</strong> ${customer.city ?? "—"}</li>
+        <li class="list-group-item">
+          <strong>Етикет:</strong>
+          <span class="badge text-bg-success ms-2">
+            ${CUSTOMER_TAG_LABELS[customer.customer_tag] ?? customer.customer_tag}
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h2 class="h6 text-success">История на поръчките</h2>
+      ${renderCustomerOrders(customer.orders)}
+    </div>
+
+    <div>
+      <h2 class="h6 text-success">Частни бележки</h2>
+      <div id="customer-notes-list">${renderCustomerNotes(notes)}</div>
+      <form id="customer-note-form">
+        <input type="hidden" id="customer-note-id" value="${customer.id}" />
+        <div class="mb-2">
+          <textarea class="form-control" id="customer-note-text" rows="2" placeholder="Добави бележка..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-sm btn-success">Добави бележка</button>
+      </form>
     </div>
   `;
 }
@@ -282,6 +397,87 @@ function openProductModal(rootElement, product = null) {
   productModal.show();
 }
 
+function openDeleteProductModal(rootElement, product) {
+  pendingDeleteProductId = product.id;
+  rootElement.querySelector("#delete-product-message").textContent =
+    `Сигурни ли сте, че искате да изтриете "${product.name}"?`;
+
+  if (!deleteProductModal) {
+    deleteProductModal = new Modal(rootElement.querySelector("#delete-product-modal"));
+  }
+
+  deleteProductModal.show();
+}
+
+async function openCustomerModal(rootElement, customerId) {
+  const modalBody = rootElement.querySelector("#customer-modal-body");
+  const modalTitle = rootElement.querySelector("#customer-modal-title");
+
+  modalBody.innerHTML = `
+    <div class="placeholder-glow" aria-hidden="true">
+      <span class="placeholder col-12" style="height: 200px;"></span>
+    </div>
+  `;
+
+  if (!customerModal) {
+    customerModal = new Modal(rootElement.querySelector("#customer-modal"));
+  }
+
+  customerModal.show();
+
+  try {
+    const [customer, notes] = await Promise.all([
+      getCustomerById(customerId),
+      getCustomerNotes(customerId)
+    ]);
+
+    if (!customer) {
+      modalBody.innerHTML = `<div class="alert alert-warning">Клиентът не е намерен.</div>`;
+      return;
+    }
+
+    modalTitle.textContent = customer.full_name ?? "Профил на клиент";
+    modalBody.innerHTML = renderCustomerModalContent(customer, notes);
+    bindCustomerNoteForm(rootElement);
+  } catch {
+    modalBody.innerHTML = `<div class="alert alert-warning">Неуспешно зареждане на клиента.</div>`;
+  }
+}
+
+function bindCustomerNoteForm(rootElement) {
+  const form = rootElement.querySelector("#customer-note-form");
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const customerId = rootElement.querySelector("#customer-note-id").value;
+    const noteText = rootElement.querySelector("#customer-note-text").value.trim();
+    const admin = getCurrentUser();
+    const submitButton = form.querySelector('[type="submit"]');
+
+    if (!noteText) {
+      return;
+    }
+
+    submitButton.disabled = true;
+
+    try {
+      await createCustomerNote(customerId, noteText, admin.id);
+      const notes = await getCustomerNotes(customerId);
+      rootElement.querySelector("#customer-notes-list").innerHTML = renderCustomerNotes(notes);
+      rootElement.querySelector("#customer-note-text").value = "";
+      showToast("Бележката е добавена.", "success");
+    } catch (error) {
+      showToast(error.message ?? "Неуспешно добавяне на бележка.", "danger");
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+}
+
 async function loadProductsTab(rootElement) {
   const container = rootElement.querySelector("#products-table-wrap");
   renderLoading(container);
@@ -311,8 +507,8 @@ async function loadCustomersTab(rootElement) {
   renderLoading(container);
 
   try {
-    const customers = await getAllCustomers();
-    container.innerHTML = renderCustomersTable(customers);
+    customersCache = await getAllCustomers();
+    container.innerHTML = renderCustomersTable(customersCache);
   } catch {
     container.innerHTML = `<div class="alert alert-warning">Неуспешно зареждане на клиентите.</div>`;
   }
@@ -357,7 +553,28 @@ function bindProductsTab(rootElement) {
     }
   });
 
-  wrap.addEventListener("click", async (event) => {
+  rootElement.querySelector("#confirm-delete-product-btn").addEventListener("click", async () => {
+    if (!pendingDeleteProductId) {
+      return;
+    }
+
+    const button = rootElement.querySelector("#confirm-delete-product-btn");
+    button.disabled = true;
+
+    try {
+      await deleteProduct(pendingDeleteProductId);
+      deleteProductModal?.hide();
+      pendingDeleteProductId = null;
+      showToast("Продуктът е изтрит.", "success");
+      await loadProductsTab(rootElement);
+    } catch (error) {
+      showToast(error.message ?? "Неуспешно изтриване.", "danger");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  wrap.addEventListener("click", (event) => {
     const editButton = event.target.closest(".edit-product-btn");
     const deleteButton = event.target.closest(".delete-product-btn");
 
@@ -371,18 +588,7 @@ function bindProductsTab(rootElement) {
     if (deleteButton) {
       const productId = deleteButton.closest("[data-product-id]").dataset.productId;
       const product = productsCache.find((entry) => entry.id === productId);
-
-      if (!window.confirm(`Сигурни ли сте, че искате да изтриете "${product?.name}"?`)) {
-        return;
-      }
-
-      try {
-        await deleteProduct(productId);
-        showToast("Продуктът е изтрит.", "success");
-        await loadProductsTab(rootElement);
-      } catch (error) {
-        showToast(error.message ?? "Неуспешно изтриване.", "danger");
-      }
+      openDeleteProductModal(rootElement, product);
     }
   });
 }
@@ -454,6 +660,20 @@ function bindOrdersTab(rootElement) {
   });
 }
 
+function bindCustomersTab(rootElement) {
+  const wrap = rootElement.querySelector("#customers-table-wrap");
+
+  wrap.addEventListener("click", (event) => {
+    const profileButton = event.target.closest(".customer-profile-btn");
+    if (!profileButton) {
+      return;
+    }
+
+    const customerId = profileButton.closest("[data-customer-id]").dataset.customerId;
+    openCustomerModal(rootElement, customerId);
+  });
+}
+
 function bindAdminTabs(rootElement) {
   const ordersTab = rootElement.querySelector("#orders-tab-btn");
   const customersTab = rootElement.querySelector("#customers-tab-btn");
@@ -486,6 +706,7 @@ export async function renderAdminPage(rootElement, context) {
 
   bindProductsTab(rootElement);
   bindOrdersTab(rootElement);
+  bindCustomersTab(rootElement);
   bindAdminTabs(rootElement);
 
   await loadProductsTab(rootElement);

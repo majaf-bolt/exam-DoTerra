@@ -28,6 +28,13 @@ async function fetchProfile(userId) {
 async function buildUserFromSession(session) {
   const profile = await fetchProfile(session.user.id);
 
+  if (session.user.email) {
+    await supabase
+      .from("profiles")
+      .update({ email: session.user.email })
+      .eq("id", session.user.id);
+  }
+
   return {
     id: session.user.id,
     email: session.user.email,

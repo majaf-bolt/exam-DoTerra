@@ -84,7 +84,7 @@ export async function getAllOrders() {
       shipping_phone,
       shipping_address,
       created_at,
-      profiles(full_name, phone),
+      profiles(full_name, phone, email),
       order_items(id, quantity, price, products(name))
     `)
     .order("created_at", { ascending: false });

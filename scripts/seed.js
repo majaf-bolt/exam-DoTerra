@@ -143,6 +143,7 @@ async function updateProfile(userId, profile) {
     .from("profiles")
     .update({
       full_name: profile.fullName,
+      email: profile.email,
       role: profile.role,
       customer_tag: profile.customerTag,
       phone: profile.phone,
