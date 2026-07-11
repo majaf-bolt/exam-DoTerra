@@ -90,3 +90,9 @@ Supabase Auth (`auth.users`) is used for login; a trigger auto-creates a matchin
    `SUPABASE_SERVICE_KEY` is only needed locally for `npm run seed` and is not required on Netlify.
 
 5. Deploy the site. After deploy, client-side routing works on all paths (e.g. `/products`, `/admin`).
+
+### Deploy troubleshooting
+
+- **Build failed (exit code 2):** This project uses Vite 8, which requires **Node 20.19+**. `netlify.toml` and `.nvmrc` pin Node 22 for Netlify builds.
+- **Do not commit `node_modules/` or `dist/`** — Netlify installs dependencies and builds on Linux; Windows binaries in git will break the build.
+- **Blank app after deploy:** Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify environment variables, then trigger a new deploy.
