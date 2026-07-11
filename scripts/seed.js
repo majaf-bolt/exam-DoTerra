@@ -138,19 +138,20 @@ async function ensureUser({ email, password, fullName }) {
   return user;
 }
 
-async function updateProfile(userId, profile) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({
+async function ensureProfile(userId, profile) {
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: userId,
       full_name: profile.fullName,
-      email: profile.email,
       role: profile.role,
       customer_tag: profile.customerTag,
       phone: profile.phone,
       address: profile.address,
-      city: profile.city
-    })
-    .eq("id", userId);
+      city: profile.city,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "id" }
+  );
 
   if (error) {
     throw error;
@@ -282,7 +283,7 @@ async function main() {
 
   for (const user of USERS) {
     const authUser = await ensureUser(user);
-    await updateProfile(authUser.id, user);
+    await ensureProfile(authUser.id, user);
     seededUsers[user.email] = authUser.id;
   }
 
