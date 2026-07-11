@@ -77,18 +77,102 @@ const USERS = [
 ];
 
 const PRODUCTS = [
-  { name: "Лавандула", price: 38, category: "oils", description: "Успокояващо етерично масло от лавандула.", stock: 50 },
-  { name: "Мента", price: 42, category: "oils", description: "Освежаващо етерично масло от мента.", stock: 45 },
-  { name: "Лимон", price: 35, category: "oils", description: "Енергизиращо цитрусово етерично масло.", stock: 60 },
-  { name: "Чаено дърво", price: 45, category: "oils", description: "Чисто етерично масло от чаено дърво.", stock: 40 },
-  { name: "Deep Blue", price: 85, category: "blends", description: "Смес за мускулна релаксация и комфорт.", stock: 30 },
-  { name: "On Guard", price: 78, category: "blends", description: "Защитна смес с подправки и цитруси.", stock: 35 },
-  { name: "Balance", price: 72, category: "blends", description: "Заземяваща смес за емоционален баланс.", stock: 28 },
-  { name: "Breathe", price: 68, category: "blends", description: "Освежаваща смес за дишане.", stock: 32 },
-  { name: "Deep Blue Rub", price: 95, category: "creams", description: "Топящ крем за мускули и стави.", stock: 25 },
-  { name: "HD Clear", price: 55, category: "creams", description: "Грижа за кожата с етерични масла.", stock: 38 },
-  { name: "Correct-X", price: 48, category: "creams", description: "Успокояващ крем за чувствителна кожа.", stock: 42 },
-  { name: "Immortelle", price: 145, category: "creams", description: "Луксозен антистареене крем.", stock: 15 }
+  {
+    name: "Лавандула",
+    price: 38,
+    category: "oils",
+    description: "Успокояващо етерично масло от лавандула.",
+    stock: 50,
+    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
+  },
+  {
+    name: "Мента",
+    price: 42,
+    category: "oils",
+    description: "Освежаващо етерично масло от мента.",
+    stock: 45,
+    image_url: "https://images.unsplash.com/photo-1628556270448-4d4e4148e1b1?w=400"
+  },
+  {
+    name: "Лимон",
+    price: 35,
+    category: "oils",
+    description: "Енергизиращо цитрусово етерично масло.",
+    stock: 60,
+    image_url: "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=400"
+  },
+  {
+    name: "Чаено дърво",
+    price: 45,
+    category: "oils",
+    description: "Чисто етерично масло от чаено дърво.",
+    stock: 40,
+    image_url: "https://images.unsplash.com/photo-1600857544200-b2f468e9b2b6?w=400"
+  },
+  {
+    name: "Deep Blue",
+    price: 85,
+    category: "blends",
+    description: "Смес за мускулна релаксация и комфорт.",
+    stock: 30,
+    image_url: "https://images.unsplash.com/photo-1611073615830-9b9ddfa29a86?w=400"
+  },
+  {
+    name: "On Guard",
+    price: 78,
+    category: "blends",
+    description: "Защитна смес с подправки и цитруси.",
+    stock: 35,
+    image_url: "https://images.unsplash.com/photo-1563241527-3004b7be0006?w=400"
+  },
+  {
+    name: "Balance",
+    price: 72,
+    category: "blends",
+    description: "Заземяваща смес за емоционален баланс.",
+    stock: 28,
+    image_url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400"
+  },
+  {
+    name: "Breathe",
+    price: 68,
+    category: "blends",
+    description: "Освежаваща смес за дишане.",
+    stock: 32,
+    image_url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+  },
+  {
+    name: "Deep Blue Rub",
+    price: 95,
+    category: "creams",
+    description: "Топящ крем за мускули и стави.",
+    stock: 25,
+    image_url: "https://images.unsplash.com/photo-1612817288484-6f916006741a?w=400"
+  },
+  {
+    name: "HD Clear",
+    price: 55,
+    category: "creams",
+    description: "Грижа за кожата с етерични масла.",
+    stock: 38,
+    image_url: "https://images.unsplash.com/photo-1556228578-626d9c7e9a6b?w=400"
+  },
+  {
+    name: "Correct-X",
+    price: 48,
+    category: "creams",
+    description: "Успокояващ крем за чувствителна кожа.",
+    stock: 42,
+    image_url: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=400"
+  },
+  {
+    name: "Immortelle",
+    price: 145,
+    category: "creams",
+    description: "Луксозен антистареене крем.",
+    stock: 15,
+    image_url: "https://images.unsplash.com/photo-1549887534-1541e9326642?w=400"
+  }
 ];
 
 async function findUserByEmail(email) {
